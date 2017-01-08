@@ -1,17 +1,13 @@
 'use strict';
 
-var _ = require('underscore');
-
-module.exports = function (opts) {
-  opts = opts || {};
+module.exports = function Node(opts) {
+  opts = opts || {}
 
   return {
     data: opts,
     left: opts.left,
     right: opts.right,
     parent: opts.parent,
-    seq: null,
-    depth: null,
 
     setRightChild: function (node) {
       this.right = node;
@@ -48,7 +44,7 @@ module.exports = function (opts) {
         return this.right.data[key] > this.left.data[key] ? this.right : this.left;
       }
 
-      return typeof this.right !== 'undefined' ? this.right : this.left;
+      return this.right !== undefined ? this.right : this.left;
     }
   };
 }

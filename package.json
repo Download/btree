@@ -1,16 +1,17 @@
 {
-  "name": "utree-js",
-  "version": "0.1.6",
-  "description": "A rebalancing binary tree for JS",
+  "name": "utree",
+  "version": "0.2.0",
+  "description": "A microscopically small universal self-balancing tree",
   "main": "index.js",
   "scripts": {
     "test": "mocha --recursive test",
-    "build": "browserify -d -t [ babelify --no-sourceMaps ] > index.js",
-    "watchify": "watchify src/index.js -o index.js -d"
+    "build": "browserify src/index.js -t [ babelify --no-sourceMaps ] > index.js",
+    "build-debug": "browserify src/index.js -d -t [ babelify --no-sourceMaps ] > index.js",
+    "watch": "watchify src/index.js -o index.js -d"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/QuotableWater7/btree.git"
+    "url": "git+https://github.com/download/utree.git"
   },
   "keywords": [
     "binary",
@@ -20,16 +21,16 @@
   "author": "JT Bowler",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/QuotableWater7/btree/issues"
+    "url": "https://github.com/download/utree/issues"
   },
-  "homepage": "https://github.com/QuotableWater7/btree#readme",
+  "homepage": "https://github.com/download/utree#readme",
   "devDependencies": {
     "babel-core": "^6.7.4",
     "babel-preset-es2015": "^6.6.0",
     "babelify": "^7.3.0",
     "browserify": "^13.0.0",
     "chai": "^3.5.0",
-    "mocha": "^2.4.5",
+    "mocha": "^3.2.0",
     "underscore": "^1.8.3",
     "watchify": "^3.7.0"
   },

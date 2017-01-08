@@ -15,8 +15,8 @@ describe('constructor', function () {
     tree.insert(root);
     tree.insert(leaf);
 
-    expect(tree.search(root.data.value)).to.eq(root);
-    expect(tree.search(leaf.data.value)).to.eq(leaf);
+    expect(tree.find(root.data.value)).to.eq(root);
+    expect(tree.find(leaf.data.value)).to.eq(leaf);
   });
 });
 
@@ -40,7 +40,7 @@ describe('#isEmpty', function () {
 describe('#findPaths', function () {
   it('returns all the paths from root to leaf', function () {
     var tree = new Tree();
-    tree.bulkInsert(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    tree.insert(1, 2, 3, 4, 5, 6, 7, 8, 9);
 
     var paths = tree.findPaths();
     expect(paths.length).to.eq(5);
@@ -68,48 +68,48 @@ describe('#findPaths', function () {
 describe('#next', function () {
   it('returns the next node in the tree', function () {
     var tree = new Tree();
-    tree.bulkInsert(6, 7, 8, 1, 2, 3, 4, 5);
+    tree.insert(6, 7, 8, 1, 2, 3, 4, 5);
 
     for (var i = 1; i < 8; i++) {
-      expect(tree.next(tree.search(i))).to.eq(tree.search(i + 1));
+      expect(tree.next(tree.find(i))).to.eq(tree.find(i + 1));
     }
   });
 
-  it('returns null if no node passed in', function () {
+  it('returns undefined if no node passed in', function () {
     var tree = new Tree();
 
-    expect(tree.next(null)).to.eq(null);
+    expect(tree.next()).to.eq(undefined);
   });
 
-  it('returns null if no next element', function () {
+  it('returns undefined if no next element', function () {
     var tree = new Tree();
     tree.insert(5);
 
-    expect(tree.next(tree.search(5))).to.eq(null);
+    expect(tree.next(tree.find(5))).to.eq(undefined);
   });
 });
 
 describe('#prev', function () {
   it('returns the prev node in the tree', function () {
     var tree = new Tree();
-    tree.bulkInsert(6, 7, 8, 1, 2, 3, 4, 5);
+    tree.insert(6, 7, 8, 1, 2, 3, 4, 5);
 
     for (var i = 2; i <= 8; i++) {
-      expect(tree.prev(tree.search(i))).to.eq(tree.search(i - 1));
+      expect(tree.prev(tree.find(i))).to.eq(tree.find(i - 1));
     }
   });
 
-  it('returns null if no node passed in', function () {
+  it('returns undefined if no node passed in', function () {
     var tree = new Tree();
 
-    expect(tree.prev(null)).to.eq(null);
+    expect(tree.prev()).to.eq(undefined);
   });
 
-  it('returns null if no prev element', function () {
+  it('returns undefined if no prev element', function () {
     var tree = new Tree();
     tree.insert(5);
 
-    expect(tree.prev(tree.search(5))).to.eq(null);
+    expect(tree.prev(tree.find(5))).to.eq(undefined);
   });
 });
 
@@ -118,7 +118,7 @@ describe('#delete', function () {
 
   beforeEach(function () {
     tree = new Tree();
-    tree.bulkInsert(100, 50, 150, 175, 125);
+    tree.insert(100, 50, 150, 175, 125);
   });
 
   it('can delete the root', function () {
@@ -129,7 +129,7 @@ describe('#delete', function () {
 
   it('can delete the root when many elements in tree', function () {
     tree = new Tree();
-    tree.bulkInsert(
+    tree.insert(
       1, 3, 5, 2, 4, 6, 7, 8, 9, 15, 11, 13, 17, 18, 14, 19, 25, 30, 22, 21, 10, 16
     );
     tree.delete(tree.root);
@@ -141,7 +141,7 @@ describe('#delete', function () {
 
   it('can delete when node has one child on left', function () {
     tree = new Tree();
-    tree.bulkInsert(50, 25, 75, 12);
+    tree.insert(50, 25, 75, 12);
     tree.delete(25);
 
     expect(tree.root.left.data.key).to.eq(12);
@@ -150,7 +150,7 @@ describe('#delete', function () {
 
   it('can delete when node has one child on right', function () {
     tree = new Tree();
-    tree.bulkInsert(50, 25, 75, 33);
+    tree.insert(50, 25, 75, 33);
     tree.delete(25);
 
     expect(tree.root.left.data.key).to.eq(33);
@@ -172,40 +172,26 @@ describe('#delete', function () {
     expect(tree.root.left.data.key).to.eq(100);
   });
 
+  /*
   it('throws error if node not found', function () {
     function runner() { tree.delete(99); }
 
     expect(runner).to.throw('Cannot delete non-existent node');
   });
-});
-
-describe('#deleteAll', function () {
-  var tree;
-
-  beforeEach(function () {
-    tree = new Tree();
-    tree.bulkInsert(1, 2, 3, 4, 5, 6, 7, 8, 9);
-  });
-
-  it('removes all nodes including the root', function () {
-    tree.deleteAll();
-
-    expect(tree.height()).to.eq(0);
-    expect(tree.isEmpty()).to.eq(true);
-  });
+  */
 });
 
 describe('#min', function () {
   it('returns the root when it is the only element', function () {
     var tree = new Tree();
-    tree.bulkInsert(9);
+    tree.insert(9);
 
     expect(tree.min().data.key).to.eq(9);
   });
 
   it('returns node with smallest key when tree has multiple levels', function () {
     var tree = new Tree();
-    tree.bulkInsert(9, 10, 3, 5, 0, 4, 2, 7);
+    tree.insert(9, 10, 3, 5, 0, 4, 2, 7);
 
     expect(tree.min().data.key).to.eq(0);
   });
@@ -214,14 +200,14 @@ describe('#min', function () {
 describe('#max', function () {
   it('returns the root when it is the only element', function () {
     var tree = new Tree();
-    tree.bulkInsert(9);
+    tree.insert(9);
 
     expect(tree.max().data.key).to.eq(9);
   });
 
   it('returns node with smallest key when tree has multiple levels', function () {
     var tree = new Tree();
-    tree.bulkInsert(9, 10, 3, 5, 0, 4, 2, 7);
+    tree.insert(9, 10, 3, 5, 0, 4, 2, 7);
 
     expect(tree.max().data.key).to.eq(10);
   });
@@ -265,7 +251,7 @@ describe('#height', function () {
   });
 });
 
-describe('#search', function () {
+describe('#find', function () {
   var tree;
 
   beforeEach(function () {
@@ -273,34 +259,34 @@ describe('#search', function () {
   });
 
   it('can return the matching node from left tree', function () {
-    tree.bulkInsert(5, 3, 6, 4);
+    tree.insert(5, 3, 6, 4);
 
-    expect(tree.search(4).data.key).to.eq(4);
+    expect(tree.find(4).data.key).to.eq(4);
   });
 
   it('can return the matching node from right tree', function () {
-    tree.bulkInsert(5, 3, 6, 4);
+    tree.insert(5, 3, 6, 4);
 
-    expect(tree.search(6).data.key).to.eq(6);
+    expect(tree.find(6).data.key).to.eq(6);
   });
 
   it('can return the matching node from root', function () {
-    tree.bulkInsert(5);
+    tree.insert(5);
 
-    expect(tree.search(5).data.key).to.eq(5);
+    expect(tree.find(5).data.key).to.eq(5);
   });
 
-  it('returns null when the node is not found', function () {
-    tree.bulkInsert(5, 3, 6, 4);
+  it('returns undefined when the node is not found', function () {
+    tree.insert(5, 3, 6, 4);
 
-    expect(tree.search(8)).to.eq(null);
+    expect(tree.find(8)).to.eq(undefined);
   });
 });
 
 describe('bulk insert', function () {
   it('turns an array of numbers into a tree with nodes', function () {
     var tree = new Tree();
-    tree.bulkInsert(10, 5, 15, 3, 6, 12, 18, 21);
+    tree.insert(10, 5, 15, 3, 6, 12, 18, 21);
 
     expect(tree.root.data.key).to.eq(10);
     expect(tree.root.left.data.key).to.eq(5);
@@ -339,16 +325,16 @@ describe('#insert', function () {
 
   it('throws error when key present and unique: true', function () {
     var tree = new Tree({ unique: true });
-    tree.bulkInsert(4, 5, 6);
+    tree.insert(4, 5, 6);
 
-    expect(function () { tree.bulkInsert(5); }).to.throw('Duplicate key violation');
+    expect(function () { tree.insert(5); }).to.throw('Duplicate key violation');
   });
 
   it('does not throw error when key present and unique: false', function () {
     var tree = new Tree();
-    tree.bulkInsert(4, 5, 6);
+    tree.insert(4, 5, 6);
 
-    expect(function () { tree.bulkInsert(5); }).not.to.throw();
+    expect(function () { tree.insert(5); }).not.to.throw();
   });
 
   it('inserts to correct subtree when root present', function () {
@@ -369,9 +355,9 @@ describe('#insert', function () {
 
   it('sets the correct parent on the inserted node', function () {
     var tree = new Tree();
-    tree.bulkInsert(10, 5, 15, 2, 8);
+    tree.insert(10, 5, 15, 2, 8);
 
-    expect(tree.search(2).parent).to.eq(tree.search(5));
+    expect(tree.find(2).parent).to.eq(tree.find(5));
   });
 
   it('rebalances tree to left when right side gets too long', function () {
@@ -406,7 +392,7 @@ describe('#insert', function () {
 
   it('rebalances tree to left when right side gets too long, case 3', function () {
     var tree = new Tree();
-    tree.bulkInsert(1, 2, 3, 4, 5, 6);
+    tree.insert(1, 2, 3, 4, 5, 6);
 
     expect(tree.root.data.key).to.eq(4);
     expect(tree.root.left.data.key).to.eq(2);
@@ -453,7 +439,7 @@ describe('#insert', function () {
 
   it('rebalances tree to right when left side gets too long, case 3', function () {
     var tree = new Tree();
-    tree.bulkInsert(6, 5, 4, 3, 2, 1);
+    tree.insert(6, 5, 4, 3, 2, 1);
 
     expect(tree.root.data.key).to.eq(3);
     expect(tree.root.left.data.key).to.eq(2);
@@ -476,7 +462,7 @@ describe('#swap', function () {
 
   beforeEach(function () {
     tree = new Tree();
-    tree.bulkInsert(50, 25, 75);
+    tree.insert(50, 25, 75);
     root = tree.root;
   });
 
@@ -513,7 +499,7 @@ describe('#swap', function () {
   });
 
   it('can swap at more than 1 level deep', function () {
-    tree.bulkInsert(60, 80);
+    tree.insert(60, 80);
 
     tree.swap(root.right, root.right.left);
     expect(tree.root.right.data.key).to.eq(60);
@@ -535,7 +521,7 @@ describe('#swap', function () {
   });
 
   it('can swap any two nodes (not just parent/child)', function () {
-    tree.bulkInsert(12,  33);
+    tree.insert(12,  33);
     // swap siblings
     tree.swap(tree.root.left.left, tree.root.left.right);
 
@@ -549,7 +535,7 @@ describe('#swap', function () {
 describe('#invert', function () {
   it('puts the max value at the root', function () {
     var tree = new Tree();
-    tree.bulkInsert(20, 25);
+    tree.insert(20, 25);
     tree.invert();
 
     expect(tree.root.data.key).to.eq(25);
@@ -557,7 +543,7 @@ describe('#invert', function () {
 
   it('inverts all the subtrees', function () {
     var tree = new Tree();
-    tree.bulkInsert(20, 25, 15, 22, 28);
+    tree.insert(20, 25, 15, 22, 28);
     expect(tree.root.data.key).to.eq(20);
     expect(tree.root.left.data.key).to.eq(15);
     expect(tree.root.right.data.key).to.eq(25);
@@ -575,7 +561,7 @@ describe('#invert', function () {
 describe('#inOrderTraversal', function () {
   it('yields the tree nodes in order, with metadata', function () {
     var tree = new Tree();
-    tree.bulkInsert(50, 25, 75, 12, 80, 30);
+    tree.insert(50, 25, 75, 12, 80, 30);
     var node_order = [
       { node: tree.root.left.left, depth: 3 },
       { node: tree.root.left, depth: 2 },

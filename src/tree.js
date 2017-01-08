@@ -4,53 +4,12 @@ var Node = require('./node');
 var spaces = require('./util/spaces');
 
 module.exports = function (opts) {
-  var opts = opts || {};
+  opts = opts || {};
 
   return {
     key: opts.key || 'key',
 
     unique: opts.unique || false,
-
-    print: function () {
-      var self = this;
-
-      var nodes = {};
-      this.inOrderTraversal(function (node, sequence, depth) {
-        node.sequence = sequence;
-        node.depth = depth;
-
-        if (!nodes[depth]) { nodes[depth] = []; }
-        nodes[depth].push(node);
-      });
-
-      var spaces_per_node = 5;
-      var node_depths = Object.keys(nodes);
-
-      node_depths.forEach(function (depth) {
-        var nodes_at_depth = nodes[depth];
-        var output = '';
-        for (var i = 0; i < nodes_at_depth.length; i++) {
-          var node = nodes_at_depth[i];
-          var prev_node = nodes_at_depth[i - 1];
-          var prev_sequence = prev_node ? prev_node.sequence : 0;
-          // console.log(node.sequence, i);
-          var sequence_diff = node.sequence - prev_sequence;
-          output += spaces(sequence_diff * spaces_per_node + (sequence_diff - 1));
-          output += node.data[self.key];
-        }
-        console.log(output + '\n');
-      });
-    },
-
-    printPaths: function () {
-      var key = this.key;
-      var paths = this.findPaths();
-
-      paths.forEach(function (path) {
-        var keys = path.map(function (node) { return node[key] });
-        console.log(keys.join(' '));
-      });
-    },
 
     findPaths: function () {
       var result = [];
@@ -77,84 +36,61 @@ module.exports = function (opts) {
       return this.height() === 0;
     },
 
-    search: function (key) {
+    find: function (key) {
       return this._search(key, this.root);
     },
 
     next: function (node) {
-      if (!node) { return null; }
-
-      if (node.right) {
-        return this.min(node.right);
-      } else {
+      if (!node) {return}
+      if (node.right) {return this.min(node.right)} 
+      else {
         var parent = node.parent;
-
         while (parent) {
-          if (parent.left === node) {
-            return parent;
-          }
+          if (parent.left === node) {return parent}
           node = parent;
           parent = parent.parent;
         }
-
-        return null;
       }
     },
 
     prev: function (node) {
-      if (!node) { return null; }
-
-      if (node.left) {
-        return this.max(node.left);
-      } else {
+      if (!node) {return}
+      if (node.left) {return this.max(node.left)} 
+      else {
         var parent = node.parent;
-
         while (parent) {
-          if (parent.right === node) {
-            return parent;
-          }
+          if (parent.right === node) {return parent}
           node = parent;
           parent = parent.parent;
         }
-
-        return null;
       }
     },
 
     _search: function (key, currentNode) {
-      if (!currentNode) {
-        return null;
-      } else if (currentNode.data[this.key] === key) {
-        return currentNode;
-      } else if (key < currentNode.data[this.key]) {
-        return this._search(key, currentNode.left);
-      } else if (key > currentNode.data[this.key]) {
-        return this._search(key, currentNode.right);
-      }
-    },
-
-    deleteAll: function () {
-      this.root = null;
+      if (!currentNode) {return} 
+      else if (currentNode.data[this.key] === key) {return currentNode} 
+      else if (key < currentNode.data[this.key]) {return this._search(key, currentNode.left)} 
+      else if (key > currentNode.data[this.key]) {return this._search(key, currentNode.right)}
     },
 
     delete: function (key) {
-      var node = typeof key === 'number' ? this.search(key) : key;
-      if (!node) { throw new Error('Cannot delete non-existent node'); }
-
+      var node = typeof key === 'number' ? this.find(key) : key;
+      // no need to fail spectacularly on this
+      // if (!node) { throw new Error('Cannot delete non-existent node'); }
       this._delete(node);
     },
 
     _delete: function (node) {
       var parent = node.parent;
 
-      if (node.isRoot()) { this.root = null; }
+      if (node.isRoot()) { delete this.root }
 
       // case 1: node is a leaf
       if (node.isLeaf()) {
         if (node.isRightChildOfParent(parent)) {
-          parent.right = null;
+          delete parent.right;
         } else if (node.isLeftChildOfParent(parent)) {
-          parent.left = null;
+          delete parent.left;
         }
         this.rebalance(parent);
       } // case 2: node with one child
@@ -247,16 +183,16 @@ module.exports = function (opts) {
       }
     },
 
-    bulkInsert: function () {
-      var numbers = Array.prototype.slice.call(arguments);
-
-      numbers.forEach(function (number) {
-        this.insert(number);
-      }.bind(this));
-    },
-
     insert: function (node) {
-      if (typeof node === 'number') {
+      if (arguments.length > 1) {
+        var args = Array.prototype.slice.call(arguments);
+        for (var i=0,arg; i<args.length; i++) {
+          this.insert(args[i]);
+        }
+        return;
+      }
+
+      if (typeof node == 'number') {
         var data = {};
         data[this.key] = node;
         node = new Node(data);
