@@ -1,9 +1,4 @@
-'use strict';
+var Tree = require('./tree')
+Tree.Node = require('./node')
 
-var Tree = require('./tree');
-var Node = require('./node');
-
-module.exports = {
-  Tree: Tree,
-  Node: Node
-};
+module.exports = Tree

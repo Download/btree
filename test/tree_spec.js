@@ -1,10 +1,9 @@
 'use strict';
 
-var chai = require('chai');
-var expect = chai.expect;
-var BinaryTree = require('../src/index');
-var Tree = BinaryTree.Tree;
-var Node = BinaryTree.Node;
+var chai = require('chai')
+var expect = require('chai').expect
+var Tree = require('../src')
+var Node = require('../src').Node
 
 describe('constructor', function () {
   it('can index based on the key passed in', function () {

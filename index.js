@@ -54,7 +54,6 @@ module.exports = function Node(opts) {
 'use strict';
 
 var Node = require('./node');
-var spaces = require('./util/spaces');
 
 module.exports = function (opts) {
   opts = opts || {};
@@ -459,26 +458,12 @@ module.exports = function (opts) {
   };
 };
 
-},{"./node":1,"./util/spaces":3}],3:[function(require,module,exports){
-'use strict';
-
-module.exports = function (number) {
-  var spaces = '';
-  for (var i = 0; i < number; i++) {
-    spaces += ' ';
-  }
-  return spaces;
-};
-
-},{}],4:[function(require,module,exports){
+},{"./node":1}],3:[function(require,module,exports){
 'use strict';
 
 var Tree = require('./tree');
-var Node = require('./node');
+Tree.Node = require('./node');
 
-module.exports = {
-  Tree: Tree,
-  Node: Node
-};
+module.exports = Tree;
 
-},{"./node":1,"./tree":2}]},{},[4]);
+},{"./node":1,"./tree":2}]},{},[3]);

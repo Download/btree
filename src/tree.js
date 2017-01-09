@@ -1,7 +1,6 @@
 'use strict';
 
 var Node = require('./node');
-var spaces = require('./util/spaces');
 
 module.exports = function (opts) {
   opts = opts || {};

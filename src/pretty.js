@@ -1,7 +1,6 @@
-var spaces = require('./util/spaces');
 
-module.exports = function pretty(tree) {
-	if (tree.root) {tree = tree.root}
+function pretty(tree) {
+//	if (tree.root) {tree = tree.root}
 
 	var nodes = {}
 	tree.inOrderTraversal(function (node, sequence, depth) {
@@ -23,7 +22,7 @@ module.exports = function pretty(tree) {
 			var prev_node = nodes_at_depth[i - 1]
 			var prev_sequence = prev_node ? prev_node.sequence : 0
 			var sequence_diff = node.sequence - prev_sequence
-			output += spaces(sequence_diff * spaces_per_node + (sequence_diff - 1))
+			output += pretty.spaces(sequence_diff * spaces_per_node + (sequence_diff - 1))
 			output += node.data[tree.key]
 		}
 		result += output + '\n'
@@ -31,3 +30,11 @@ module.exports = function pretty(tree) {
 
 	return result
 }
+
+pretty.spaces = function spaces(number) {
+  var spaces = '';
+  for (var i = 0; i < number; i++) { spaces += ' '; }
+  return spaces;
+}
+
+module.exports = pretty
