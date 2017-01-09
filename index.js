@@ -55,7 +55,7 @@ module.exports = function Node(opts) {
 
 var Node = require('./node');
 
-module.exports = function (opts) {
+function Tree(opts) {
   opts = opts || {};
 
   return {
@@ -88,10 +88,6 @@ module.exports = function (opts) {
 
     isEmpty: function isEmpty() {
       return this.height() === 0;
-    },
-
-    find: function find(key) {
-      return this._search(key, this.root);
     },
 
     next: function next(node) {
@@ -130,16 +126,15 @@ module.exports = function (opts) {
       }
     },
 
-    _search: function _search(key, currentNode) {
-      if (!currentNode) {
-        return;
-      } else if (currentNode.data[this.key] === key) {
-        return currentNode;
-      } else if (key < currentNode.data[this.key]) {
-        return this._search(key, currentNode.left);
-      } else if (key > currentNode.data[this.key]) {
-        return this._search(key, currentNode.right);
+    find: function find(key, node) {
+      if (!node) {
+        node = this.root;
       }
+      if (node.data[this.key] === key) {
+        return node;
+      }
+      node = key < node.data[this.key] ? node.left : node.right;
+      return node && this.find(key, node);
     },
 
     delete: function _delete(key) {
@@ -184,66 +179,40 @@ module.exports = function (opts) {
           }
     },
 
-    min: function min(currentNode) {
-      return this._min(currentNode || this.root);
+    min: function min(node) {
+      node = node || this.root;
+      return node.left ? this.min(node.left) : node;
     },
 
-    _min: function _min(currentNode) {
-      return currentNode.left ? this._min(currentNode.left) : currentNode;
+    max: function max(node) {
+      node = node || this.root;
+      return node.right ? this.max(node.right) : node;
     },
 
-    max: function max(currentNode) {
-      return this._max(currentNode || this.root);
-    },
-
-    _max: function _max(currentNode) {
-      return currentNode.right ? this._max(currentNode.right) : currentNode;
-    },
-
-    postOrderTraversal: function postOrderTraversal(callback, currentNode) {
-      currentNode = arguments.length > 1 ? currentNode : this.root;
-
-      if (currentNode.left) {
-        this.postOrderTraversal(callback, currentNode.left);
+    forEach: function forEach(fn, order, node, idx, depth) {
+      order = order || Tree.IN_ORDER;
+      node = node || this.root;
+      idx = idx === undefined ? 0 : idx;
+      depth = depth ? depth + 1 : 1;
+      if (!node) {
+        return 0;
       }
-
-      if (currentNode.right) {
-        this.postOrderTraversal(callback, currentNode.right);
+      if (order === Tree.PRE_ORDER) {
+        fn(node, idx++, depth);
       }
-
-      callback(currentNode);
-    },
-
-    preOrderTraversal: function preOrderTraversal(callback, currentNode) {
-      currentNode = arguments.length > 1 ? currentNode : this.root;
-
-      callback(currentNode);
-
-      if (currentNode.left) {
-        this.preOrderTraversal(callback, currentNode.left);
+      if (node.left) {
+        idx = this.forEach(fn, order, node.left, idx, depth);
       }
-
-      if (currentNode.right) {
-        this.preOrderTraversal(callback, currentNode.right);
+      if (order === Tree.IN_ORDER) {
+        fn(node, idx++, depth);
       }
-    },
-
-    inOrderTraversal: function inOrderTraversal(callback, currentNode, depth) {
-      if (arguments.length === 1) {
-        currentNode = this.root;
-        this._sequence = 1;
-        depth = 1;
+      if (node.right) {
+        idx = this.forEach(fn, order, node.right, idx, depth);
       }
-
-      if (currentNode.left) {
-        this.inOrderTraversal(callback, currentNode.left, depth + 1);
+      if (order === Tree.POST_ORDER) {
+        fn(node, idx++, depth);
       }
-
-      callback(currentNode, this._sequence++, depth);
-
-      if (currentNode.right) {
-        this.inOrderTraversal(callback, currentNode.right, depth + 1);
-      }
+      return idx;
     },
 
     insert: function insert(node) {
@@ -456,7 +425,13 @@ module.exports = function (opts) {
       return 1 + Math.max(this.height(node.left), this.height(node.right));
     }
   };
-};
+}
+
+Tree.PRE_ORDER = 1;
+Tree.IN_ORDER = 2;
+Tree.POST_ORDER = 3;
+
+module.exports = Tree;
 
 },{"./node":1}],3:[function(require,module,exports){
 'use strict';

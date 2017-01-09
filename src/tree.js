@@ -2,7 +2,7 @@
 
 var Node = require('./node');
 
-module.exports = function (opts) {
+function Tree(opts) {
   opts = opts || {};
 
   return {
@@ -35,10 +35,6 @@ module.exports = function (opts) {
       return this.height() === 0;
     },
 
-    find: function (key) {
-      return this._search(key, this.root);
-    },
-
     next: function (node) {
       if (!node) {return}
       if (node.right) {return this.min(node.right)} 
@@ -65,11 +61,11 @@ module.exports = function (opts) {
       }
     },
 
-    _search: function (key, currentNode) {
-      if (!currentNode) {return} 
-      else if (currentNode.data[this.key] === key) {return currentNode} 
-      else if (key < currentNode.data[this.key]) {return this._search(key, currentNode.left)} 
-      else if (key > currentNode.data[this.key]) {return this._search(key, currentNode.right)}
+    find: function (key, node) {
+      if (!node) {node = this.root} 
+      if (node.data[this.key] === key) {return node} 
+      node = key < node.data[this.key] ? node.left : node.right
+      return node && this.find(key, node)
     },
 
     delete: function (key) {
@@ -112,74 +108,28 @@ module.exports = function (opts) {
       }
     },
 
-    min: function (currentNode) {
-      return this._min(currentNode || this.root);
+    min: function (node) {
+      node = node || this.root
+      return node.left ? this.min(node.left) : node
     },
 
-    _min: function (currentNode) {
-      return currentNode.left ? this._min(currentNode.left) : currentNode;
+    max: function (node) {
+      node = node || this.root
+      return node.right ? this.max(node.right) : node
     },
 
-    max: function (currentNode) {
-      return this._max(currentNode || this.root);
-    },
-
-    _max: function (currentNode) {
-      return currentNode.right ? this._max(currentNode.right) : currentNode;
-    },
-
-    postOrderTraversal: function (callback, currentNode) {
-      currentNode = arguments.length > 1 ? currentNode : this.root;
-
-      if (currentNode.left) {
-        this.postOrderTraversal(callback, currentNode.left);
-      }
-
-      if (currentNode.right) {
-        this.postOrderTraversal(callback, currentNode.right);
-      }
-
-      callback(currentNode);
-    },
-
-    preOrderTraversal: function (callback, currentNode) {
-      currentNode = arguments.length > 1 ? currentNode : this.root;
-
-      callback(currentNode);
-
-      if (currentNode.left) {
-        this.preOrderTraversal(callback, currentNode.left);
-      }
-
-      if (currentNode.right) {
-        this.preOrderTraversal(callback, currentNode.right);
-      }
-    },
-
-    inOrderTraversal: function (callback, currentNode, depth) {
-      if (arguments.length === 1) {
-        currentNode = this.root;
-        this._sequence = 1;
-        depth = 1;
-      }
-
-      if (currentNode.left) {
-        this.inOrderTraversal(
-          callback,
-          currentNode.left,
-          depth + 1
-        );
-      }
-
-      callback(currentNode, this._sequence++, depth);
-
-      if (currentNode.right) {
-        this.inOrderTraversal(
-          callback,
-          currentNode.right,
-          depth + 1
-        );
-      }
+    forEach: function (fn, order, node, idx, depth) {
+      order = order || Tree.IN_ORDER
+      node = node || this.root;
+      idx = idx === undefined ? 0 : idx
+      depth = depth ? depth + 1 : 1
+      if (! node) {return 0}
+      if (order === Tree.PRE_ORDER) {fn(node, idx++, depth)}
+      if (node.left)  {idx = this.forEach(fn, order, node.left, idx, depth)}
+      if (order === Tree.IN_ORDER) {fn(node, idx++, depth)}
+      if (node.right) {idx = this.forEach(fn, order, node.right, idx, depth)}
+      if (order === Tree.POST_ORDER) {fn(node, idx++, depth)}
+      return idx
     },
 
     insert: function (node) {
@@ -364,3 +314,9 @@ module.exports = function (opts) {
     }
   };
 }
+
+Tree.PRE_ORDER = 1
+Tree.IN_ORDER = 2
+Tree.POST_ORDER = 3
+
+module.exports = Tree
