@@ -9,6 +9,7 @@ module.exports = function Node(opts) {
     right: opts.right,
     parent: opts.parent,
 
+/*
     setRightChild: function (node) {
       this.right = node;
       node.parent = this;
@@ -18,7 +19,7 @@ module.exports = function Node(opts) {
       this.left = node;
       node.parent = this;
     },
-
+*/
     isRoot: function () {
       return !this.parent;
     },

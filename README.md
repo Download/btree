@@ -50,6 +50,39 @@ log.info(pretty(tree))
 //    5         10
 ```
 
+## Demo
+A small demo is included with the project.
+To run it:
+
+```sh
+npm run demo
+```
+
+Output:
+
+```sh
+
+                                                                       13
+                                         7                                                     17
+                 3                                   9                             15                                   22
+     1                       5                 8                 11           14           16                 19                 25
+           2           4           6                       10                                         18           21                 30
+```
+
+Code:
+
+*printer.js*
+
+```js
+var log = require('ulog')('printer')
+var Tree = require('../src/tree')
+var pretty = require('../src/pretty')
+
+log.info(pretty(new Tree().insert(
+  1, 3, 5, 2, 4, 6, 7, 8, 9, 15, 11, 13, 17, 18, 14, 19, 25, 30, 22, 21, 10, 16
+)))
+```
+
 ## Options
 You can pass an options object to the Tree constructor with these options.
 
@@ -251,21 +284,6 @@ log.info(nodes[0].parent)      // undefined
 nodes = tree.find(1)
 log.info(nodes.length)         // 0
 log.info(nodes[0])             // undefined
-```
-
-### findPaths()
-Returns a list of paths from the root to the leaf (array of array of nodes).
-
-```js
-tree.insert(2, 1, 3);
-var paths = tree.findPaths();
-paths.forEach(function path) {
-  var keys = path.map(function (node) { return node.key; });
-  log.info(keys.join(' '));
-});
-
-// 2 1
-// 2 3
 ```
 
 ### height

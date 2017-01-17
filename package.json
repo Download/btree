@@ -1,13 +1,14 @@
 {
   "name": "utree",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "A microscopically small universal self-balancing tree",
-  "main": "index.js",
+  "main": "utree.js",
   "scripts": {
-    "test": "mocha --recursive test",
+    "test": "mocha utree.spec.js",
     "build": "browserify src/index.js -t [ babelify --no-sourceMaps ] > index.js",
     "build-debug": "browserify src/index.js -d -t [ babelify --no-sourceMaps ] > index.js",
-    "watch": "watchify src/index.js -o index.js -d"
+    "watch": "watchify src/index.js -o index.js -d",
+    "demo": "node ./demo/printer.js"
   },
   "repository": {
     "type": "git",
@@ -31,6 +32,7 @@
     "browserify": "^13.0.0",
     "chai": "^3.5.0",
     "mocha": "^3.2.0",
+    "ulog": "^1.0.0",
     "underscore": "^1.8.3",
     "watchify": "^3.7.0"
   },

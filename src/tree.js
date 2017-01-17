@@ -1,322 +1,257 @@
-'use strict';
-
-var Node = require('./node');
-
-function Tree(opts) {
-  opts = opts || {};
-
-  return {
-    key: opts.key || 'key',
-
-    unique: opts.unique || false,
-
-    findPaths: function () {
-      var result = [];
-      this._findPaths(this.root, [], result);
-
-      return result;
-    },
-
-    _findPaths: function (currentNode, currentPath, paths) {
-      if (!currentNode) { return; }
-
-      var newPath = currentPath.slice(0);
-      newPath.push(currentNode);
-
-      if (currentNode.isLeaf()) {
-        paths.push(newPath);
-      } else {
-        this._findPaths(currentNode.left, newPath, paths);
-        this._findPaths(currentNode.right, newPath, paths);
-      }
-    },
-
-    isEmpty: function () {
-      return this.height() === 0;
-    },
-
-    next: function (node) {
-      if (!node) {return}
-      if (node.right) {return this.min(node.right)} 
-      else {
-        var parent = node.parent;
-        while (parent) {
-          if (parent.left === node) {return parent}
-          node = parent;
-          parent = parent.parent;
-        }
-      }
-    },
-
-    prev: function (node) {
-      if (!node) {return}
-      if (node.left) {return this.max(node.left)} 
-      else {
-        var parent = node.parent;
-        while (parent) {
-          if (parent.right === node) {return parent}
-          node = parent;
-          parent = parent.parent;
-        }
-      }
-    },
-
-    find: function (key, node) {
-      if (!node) {node = this.root} 
-      if (node.data[this.key] === key) {return node} 
-      node = key < node.data[this.key] ? node.left : node.right
-      return node && this.find(key, node)
-    },
-
-    delete: function (key) {
-      var node = typeof key === 'number' ? this.find(key) : key;
-      // no need to fail spectacularly on this
-      // if (!node) { throw new Error('Cannot delete non-existent node'); }
-      this._delete(node);
-    },
-
-    _delete: function (node) {
-      var parent = node.parent;
-
-      if (node.isRoot()) { delete this.root }
-
-      // case 1: node is a leaf
-      if (node.isLeaf()) {
-        if (node.isRightChildOfParent(parent)) {
-          delete parent.right;
-        } else if (node.isLeftChildOfParent(parent)) {
-          delete parent.left;
-        }
-        this.rebalance(parent);
-      } // case 2: node with one child
-      else if (node.hasOneChild()) {
-        var child = node.left || node.right;
-
-        if (node.isRightChildOfParent(parent)) {
-          parent.right = child;
-        } else if (node.isLeftChildOfParent(parent)) {
-          parent.left = child;
-        }
-
-        child.parent = parent;
-        this.rebalance(parent);
-      } // case 3: node has two children
-      else {
-        var replacementNode = this.max(node.left);
-        this.swap(node, replacementNode);
-        this._delete(node);
-      }
-    },
-
-    min: function (node) {
-      node = node || this.root
-      return node.left ? this.min(node.left) : node
-    },
-
-    max: function (node) {
-      node = node || this.root
-      return node.right ? this.max(node.right) : node
-    },
-
-    forEach: function (fn, order, node, idx, depth) {
-      order = order || Tree.IN_ORDER
-      node = node || this.root;
-      idx = idx === undefined ? 0 : idx
-      depth = depth ? depth + 1 : 1
-      if (! node) {return 0}
-      if (order === Tree.PRE_ORDER) {fn(node, idx++, depth)}
-      if (node.left)  {idx = this.forEach(fn, order, node.left, idx, depth)}
-      if (order === Tree.IN_ORDER) {fn(node, idx++, depth)}
-      if (node.right) {idx = this.forEach(fn, order, node.right, idx, depth)}
-      if (order === Tree.POST_ORDER) {fn(node, idx++, depth)}
-      return idx
-    },
-
-    insert: function (node) {
-      if (arguments.length > 1) {
-        var args = Array.prototype.slice.call(arguments);
-        for (var i=0,arg; i<args.length; i++) {
-          this.insert(args[i]);
-        }
-        return;
-      }
-
-      if (typeof node == 'number') {
-        var data = {};
-        data[this.key] = node;
-        node = new Node(data);
-      }
-
-      if (!this.root) {
-        this.root = node;
-      } else {
-        this._insert(node, this.root);
-      }
-    },
-
-    _insert: function (node, currentRoot) {
-      if (node.data[this.key] === currentRoot.data[this.key] && this.unique) {
-        throw new Error('Duplicate key violation');
-      } else if (node.data[this.key] > currentRoot.data[this.key]) {
-        if (currentRoot.right) {
-          this._insert(node, currentRoot.right);
-        } else {
-          currentRoot.setRightChild(node);
-          this.rebalance(currentRoot.parent);
-        }
-      } else if (node.data[this.key] < currentRoot.data[this.key]) {
-        if (currentRoot.left) {
-          this._insert(node, currentRoot.left);
-        } else {
-          currentRoot.setLeftChild(node);
-          this.rebalance(currentRoot.parent);
-        }
-      }
-    },
-
-    invert: function (node) {
-      var node = arguments.length > 0 ? node : this.root;
-      if (!node) { return; }
-      if (this.height(node) === 1) { return; }
-
-      this.invert(node.left);
-      this.invert(node.right);
-
-      var parent = node;
-      var child = node.largestChild(this.key);
-      this.swap(parent, child);
-
-      if (child.isRoot()) { this.root = child; }
-    },
-
-    swap: function (n1, n2) {
-      var n1parent = n1.parent;
-      var n1left = n1.left;
-      var n1right = n1.right;
-
-      var n2parent = n2.parent;
-      var n2left = n2.left;
-      var n2right = n2.right;
-
-      // connect nodes surrounding n1 and n2 to new nodes
-      if (n1parent) {
-        if (n1parent.right === n1) {
-          n1parent.right = n2;
-        } else {
-          n1parent.left = n2;
-        }
-      }
-      if (n1left) { n1left.parent = n2; }
-      if (n1right) { n1right.parent = n2; }
-
-      if (n2parent) {
-        if (n2parent.right === n2) {
-          n2parent.right = n1;
-        } else {
-          n2parent.left = n1;
-        }
-      }
-      if (n2left) { n2left.parent = n1; }
-      if (n2right) { n2right.parent = n1; }
-
-      // now connect n1 and n2 to their correct surroundings
-      n2.parent = n1parent !== n2 ? n1parent : n1;
-      n2.right = n1right !== n2 ? n1right : n1;
-      n2.left = n1left !== n2 ? n1left : n1;
-
-      n1.parent = n2parent !== n1 ? n2parent : n2;
-      n1.right = n2right !== n1 ? n2right : n2;
-      n1.left = n2left !== n1 ? n2left : n2;
-
-      if (n1.isRoot()) { this.root = n1; }
-      else if (n2.isRoot()) { this.root = n2; }
-    },
-
-    rebalance: function (node) {
-      if (!node) { return; }
-
-      var height_left = this.height(node.left);
-      var height_right = this.height(node.right);
-
-      var diff = height_left - height_right;
-      if (diff === 2) {
-        var child = node.left;
-
-        if (this.height(child.right) > this.height(child.left)) {
-          this.rotateLeft(child);
-          node.left = child.parent;
-        }
-
-        this.rotateRight(node);
-      } else if (diff === -2) {
-        var child = node.right;
-
-        if (this.height(child.left) > this.height(child.right)) {
-          this.rotateRight(child);
-          node.right = child.parent;
-        }
-
-        this.rotateLeft(node);
-      }
-
-      this.rebalance(node.parent);
-    },
-
-    rotateLeft: function (node) {
-      var parent = node.parent;
-      var child = node.right;
-      var child_left_child = child.left;
-
-      child.parent = parent;
-      if (parent) {
-        if (parent.right === node) {
-          parent.right = child;
-        } else if (parent.left === node) {
-          parent.left = child;
-        }
-      }
-      child.left = node;
-
-      node.parent = child;
-      node.right = child_left_child;
-      if (child_left_child) { child_left_child.parent = node; }
-
-      if (!parent) { this.root = child; }
-    },
-
-    rotateRight: function (node) {
-      var parent = node.parent;
-      var child = node.left;
-      var child_right_child = child.right;
-
-      child.parent = parent;
-      if (parent) {
-        if (parent.right === node) {
-          parent.right = child;
-        } else if (parent.left === node) {
-          parent.left = child;
-        }
-      }
-      child.right = node;
-
-      node.parent = child;
-      node.left = child_right_child;
-      if (child_right_child) { child_right_child.parent = node; }
-
-      if (!parent) { this.root = child; }
-    },
-
-    height: function (node) {
-      var node = arguments.length > 0 ? node : this.root;
-      if (!node) { return 0; }
-
-      return 1 + Math.max(this.height(node.left), this.height(node.right));
-    }
-  };
+function Tree(o) {
+  if (! this instanceof Tree) return new Tree(o)
+  this.p = o instanceof Tree ? o : undefined,
+  console.log('Tree: this.p=', this.p)
+  o = extend({}, Tree.OPTIONS, this.p ? this.p.options : o)
+  if (! this.p) {this.root = new Tree(this); delete this.root.p}
+  Object.defineProperties(this, {
+    options: {get: function options(){return this.p ? this.p.options : o}},
+    size: {enumerable:true, get:function size() {return s(rt(this))}},
+    height: {enumerable:true, get:function height() {return h(rt(this))}},
+    min: {get:function min() {return m(rt(this), 'l')}},
+    max: {get:function max() {return m(rt(this), 'r')}},
+    prev: {get:function prev() {return go(rt(this), 'l')}},
+    next: {get:function next() {return go(rt(this), 'r')}},
+  })
 }
+
+extend(Tree.prototype, {
+  isEmpty: function isEmpty() {return ! rt(this).d},
+  isParent: function isParent(){return !!(rt(this).l || rt(this).r)},
+
+  forEach: function forEach(fn, order, n, idx, depth) {
+    order = order || Tree.IN_ORDER
+    n = n === undefined ? rt(this) : n;
+    idx = idx === undefined ? 0 : idx
+    depth = depth ? depth + 1 : 1
+    if (n && n.d) {
+      if (order === Tree.PRE_ORDER) fn(n, idx++, depth)
+      idx = n.forEach(fn, order, n.l || null, idx, depth)
+      if (order === Tree.IN_ORDER) fn(n, idx++, depth)
+      idx = n.forEach(fn, order, n.r || null, idx, depth)
+      if (order === Tree.POST_ORDER) fn(n, idx++, depth)
+    }
+    return idx
+  },
+
+  get: function get(obj) {
+    var k = this.options.key(obj), comp = this.options.compare(k, rt(this).d.k),
+        c = (comp < 0 && rt(this).l) || (comp > 0 && rt(this).r)
+    return comp === 0 ? rt(this) : c && c.get(k)
+  },
+
+  set: function set(obj) {
+    var c, comp, args, o = this.options
+    if (args = ((arguments.length > 1 && [].slice.call(arguments)) || (Array.isArray(obj) && obj))) {
+      for (var i=0; i<args.length; i++) this.set(args[i])
+      return this
+    }
+
+    if (!rt(this).d) {
+      rt(this).d = {k:o.key(obj), v:[obj]}
+      return this
+    } 
+
+    if ((comp = o.compare(o.key(obj), rt(this).d.k)) === 0) { 
+      if (o.unique) throw new UniqueConstraintViolation(o.key(obj))
+      rt(this).d.v.push(obj)
+      return this
+    }
+
+    var c = comp > 0 
+        ? (rt(this).r || (rt(this).r = new Tree(rt(this)))) 
+        : (rt(this).l || (rt(this).l = new Tree(rt(this))))
+/*
+    if (comp > 0) {
+      c = rt(this).r
+      if (! rt(this) )
+    }
+*/
+    console.info(rt(this) == c)
+    c.set(obj)
+    var newRoot = rebalance(rt(this));
+    if (this.root) this.root = newRoot || this.root
+    return this;
+  },
+
+  del: function del(obj) {
+    var comp, args, o = this.options
+    if (args = (arguments.length > 1 && [].slice.call(arguments)) || (Array.isArray(obj) && obj)) {
+      for (var i=0; i<args.length; i++) this.del(args[i])
+      return this
+    }
+
+    var n = obj instanceof Tree ? obj : this.find(o.key(obj))
+    if (!n) return this
+
+    var p = n.p;
+    if (! n.isParent()) {
+      if (p && n === p.r) delete p.r
+      else if (p && n === p.l) delete p.l
+      else delete n.d
+      if (this.root) this.root = rebalance(p) || n
+      return this
+    } 
+    
+    if ((n.r && !n.l) || (n.l && !n.r)) {
+      var c = n.l || n.r
+      if (p && n === p.r) p.r = c
+      else if (p && n == p.l) p.l = c
+      else delete n.d
+      c.p = p
+      if (this.root) this.root = rebalance(p) || c
+      return this
+    } 
+
+    swap(n, n.l.max);
+    this.del(n);
+  }
+})
 
 Tree.PRE_ORDER = 1
 Tree.IN_ORDER = 2
 Tree.POST_ORDER = 3
+Tree.OPTIONS = {
+  unique: false,
+  keys: ['id'],
+  comparable: function(val) {
+    return (typeof x == 'number') || (x instanceof Number) ||
+            (typeof x == 'string' || x instanceof String) || (x instanceof Date)
+  },
+  compare: function(x, y) {
+    if (x && x.compare) return x.compare(y)
+    if (y && y.compare) return 0 - y.compare(x)
+    for (var i=0; i<x.length; i++) {
+      if (x[i] < y[i]) return -1
+      if (x[i] > y[i]) return 1
+    }
+    return x == y ? 0 : 1
+  },
+  key: function key(obj){
+    var results = [];
+    for (var i=0,x; x=this.keys[i]; i++) {
+      results.push(obj[x]);
+    }
+    return results;
+  }
+}
+
+function rt(n){return n && n.root || n}
+
+function h(n){
+  return (!n || !n.d 
+      ? 0 
+      : 1 + Math.max(
+        h(n.l), 
+        h(n.r)
+      )
+  )
+}
+
+function s(n){return !n || !n.d ? 0 : 1 + s(n.l) + s(n.r)}
+function m(n,d) {return n[d] ? m(n[d]) : n.d && n}
+function go(n,d) {
+  if (!n || !n.d) return
+  var p = c = n, o = d == 'l' ? 'r' : 'l'
+  if (n[d]) return m(n[d], d)
+  while (p = p.p) {
+    if (p[o] == c) return p
+    c = p;
+  }
+}
+
+
+function rebalance(n) {
+  if (!n) return n
+  console.info('rebalance', n.l == n, n.r == n)
+  var p = n.p, 
+      diff = h(n.l) - h(n.r), 
+      d = diff == 2 
+        ? 'l' 
+        : (diff == -2 
+          ? 'r' 
+          : undefined
+        )
+  if (d) {
+    var o = d == 'l' ? 'r' : 'l', c = n[d]
+    if (h(c[o]) > h(c[d])) {
+      rotate(c, d);
+      n[d] = c.p;
+    }
+    n = rotate(n, o);
+  }      
+  return rebalance(p) || n
+}
+
+function rotate(n, d) {
+  var o = d == 'l' ? 'r' : 'l', p = n.p, c = n[o]
+  c.p = p
+  if (p) {
+    if (p[o] === n) {
+      p[o] = c;
+    } else if (p[d] === n) {
+      p[d] = c
+    }
+  }
+  c[d] = n
+  n.p = c
+  n[o] = c[d]
+  if (c[d]) c[d].p = n
+  return c
+}
+
+function swap(n1, n2) {
+  var n1p = n1.p, n1l = n1.l, n1r = n1.r, n2p = n2.p, n2l = n2.l, n2r = n2.r
+  // connect nodes surrounding n1 and n2 to new nodes
+  if (n1p) {
+    if (n1p.r === n1) n1p.r = n2 
+    else n1p.l = n2
+  }
+  if (n1l) n1l.p = n2
+  if (n1r) n1r.p = n2
+  if (n2p) {
+    if (n2p.r === n2) n2p.r = n1
+    else n2p.l = n1
+  }
+  if (n2l) n2l.p = n1
+  if (n2r) n2r.p = n1
+  // now connect n1 and n2 to their correct surroundings
+  n2.p = n1p !== n2 ? n1p : n1
+  n2.r = n1r !== n2 ? n1r : n1
+  n2.l = n1l !== n2 ? n1l : n1
+  n1.p = n2p !== n1 ? n2p : n2
+  n1.r = n2r !== n1 ? n2r : n2
+  n1.l = n2l !== n1 ? n2l : n2
+  return !n1.p ? n1 : !n2.p ? n2 : undefined
+}
+
+function UniqueConstraintViolation(keys) {
+  if (! this instanceof UniqueConstraintViolation) return new UniqueConstraintViolation(keys)
+  var e = new Error(), s = e.stack && e.stack.split && e.stack.split(/\r?\n/g) || []
+  if (s[0] && s[0] === 'Error') s[0] = this.name
+  if (s[1] && s[1].indexOf && s[1].indexOf('UniqueConstraintViolation') !== -1) s.splice(1,1)
+  s = s.join('\n')
+  Object.defineProperties(this, {stack: {get: function(){return s}}})
+  this.message = 'A record with the key(s) [' + keys + '] already exists.'
+}
+UniqueConstraintViolation.prototype = extend(new Error(), {
+  name: 'UniqueConstraintViolation',
+  constructor: UniqueConstraintViolation,
+  inspect: function inspect() {return this.name + ': ' + this.message + '\n' + this.stack}
+})
+
+function extend() {
+  var args = [].slice.call(arguments), dst = args.shift()
+  for (var a=0,arg; a<args.length; a++) {
+    if (arg=args[a]) {
+      var keys = Object.keys(arg)
+      for (var k=0,key; key=keys[k]; k++) {
+        dst[key] = arg[key]
+      }
+    }
+  }
+  return dst
+}
 
 module.exports = Tree
+module.exports.UniqueConstraintViolation = UniqueConstraintViolation
