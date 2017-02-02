@@ -1,6 +1,7 @@
 var expect = require('chai').expect
 var Tree = require('./utree')
 var TreeIterator = require('./utree').TreeIterator
+var pretty = require('./pretty')
 
 describe('Tree(options)', function(){
 	var tree
@@ -8,7 +9,7 @@ describe('Tree(options)', function(){
 	beforeEach(function(){
 		tree = new Tree()
 	})
-
+/*
 	it('is a constructor function', function(){
 		expect(Tree).to.be.a('function')
 	})
@@ -17,13 +18,19 @@ describe('Tree(options)', function(){
 		expect(tree).to.be.an.instanceof(Tree)
 	})
 
-	it('creates an ES2015 Iterable object', function(){})
-	
+	it('creates an ES2015 Iterable object', function(){
+		expect(tree).to.have.a.property(Symbol.iterator)
+		expect(tree[Symbol.iterator]).to.be.a('function')
+		expect(tree[Symbol.iterator]()).to.be.an('object')
+		expect(tree[Symbol.iterator]()).to.have.a.property('next')
+		expect(tree[Symbol.iterator]().next).to.be.a('function')
+	})
+
 	it('accepts an optional parameter `options`', function(){
 		expect(new Tree({})).to.be.an.instanceof(Tree)
 	})
 
- 	describe('set', function(){
+ 	describe('set(obj)', function(){
 		it('is a method on instances of Tree', function(){
 			expect(tree).to.have.a.property('set')
 			expect(tree.set).to.be.a('function')
@@ -70,9 +77,11 @@ describe('Tree(options)', function(){
 			expect(tree.root.l).to.have.a.property('h')
 			expect(tree.root.l.h).to.eq(1)
 		})
-		
+
+*/		
 		it('automatically re-balances the tree as items are added', function(){
-			tree.set({id:10}, {id:20}, {id:30})
+			function id(id){return {id:id, toString:function(){return id.toString()}, valueOf:function(){id.toString()}}}
+			tree.set(id(10), id(20), id(30))
 			expect(tree).to.have.a.property('root')
 			expect(tree.root).to.have.a.property('k')
 			expect(tree.root.k).to.deep.eq([20])
@@ -82,6 +91,7 @@ describe('Tree(options)', function(){
 			expect(tree.root).to.have.a.property('l')
 			expect(tree.root.l).to.have.a.property('k')
 			expect(tree.root.l.k).to.deep.eq([10])
+			/*
 			tree = new Tree()
 			tree.set({id:10}, {id:30}, {id:20})
 			expect(tree).to.have.a.property('root')
@@ -104,10 +114,11 @@ describe('Tree(options)', function(){
 			expect(tree.root).to.have.a.property('l')
 			expect(tree.root.l).to.have.a.property('k')
 			expect(tree.root.l.k).to.deep.eq([20])
+			*/
 		})
 	})
-	
-	describe('get', function(){
+/*
+	describe('get(obj)', function(){
 		beforeEach(function(){
 			tree.set({id:30}, {id:10}, {id:20}, {id:40}, {id:50}, {id:60})
 		})
@@ -170,14 +181,51 @@ describe('Tree(options)', function(){
 		})
 	})
 	
-	describe('del', function(){
+	describe('del(obj)', function(){
 		it('is a method on instances of Tree', function(){
 			expect(tree).to.have.a.property('del')
 			expect(tree.del).to.be.a('function')
 		})
 	})
 	
-	describe('preOrder', function(){
+	describe('forEach(fn [, order])', function(){
+		it('is a method on instances of Tree', function(){
+			expect(tree).to.have.a.property('forEach')
+			expect(tree.forEach).to.be.a('function')
+		})
+
+		it('accepts a function which it calls for each key in the tree', function(){
+			tree.set({id:30}, {id:10}, {id:20}, {id:40}, {id:50}, {id:60})
+			expect(tree).to.have.a.property('forEach')
+			expect(tree.forEach).to.be.a('function')
+			var called = 0, expected = 6
+			tree.forEach(function(){called++})
+			expect(called).to.eq(expected)
+		})
+
+		it('defaults to Tree.IN_ORDER traversal', function(){
+			tree.set({id:30}, {id:10}, {id:20}, {id:40}, {id:50}, {id:60})
+			console.info(pretty(tree))
+			var results = [], expected = [{id:10}, {id:20}, {id:30}, {id:40}, {id:50}, {id:60}]
+			tree.forEach(function(values){results.push(values[0])})
+			expect(results).to.deep.eq(expected)
+		})
+
+		it('accepts a second argument `order`', function(){
+			tree.set({id:30}, {id:10}, {id:20}, {id:40}, {id:50}, {id:60})
+			var results = [], expected = [{id:30}, {id:20}, {id:10}, {id:50}, {id:40}, {id:60}]
+			tree.forEach(function(values){results.push(values[0])}, Tree.PRE_ORDER)
+			expect(results).to.deep.eq(expected)
+		})
+
+			// tree.forEach(function(items, idx, depth, node){
+			// 	expect(items).to.be.an('array')
+			// 	expect(idx).to.eq(called++)
+			// })
+
+	})
+
+	describe('preOrder()', function(){
 		it('is a method on instances of Tree', function(){
 			expect(tree).to.have.a.property('preOrder')
 			expect(tree.preOrder).to.be.a('function')
@@ -194,7 +242,7 @@ describe('Tree(options)', function(){
 		})
 	})
 	
-	describe('inOrder', function(){
+	describe('inOrder()', function(){
 		it('is a method on instances of Tree', function(){
 			expect(tree).to.have.a.property('inOrder')
 			expect(tree.inOrder).to.be.a('function')
@@ -211,7 +259,7 @@ describe('Tree(options)', function(){
 		})
 	})
 	
-	describe('postOrder', function(){
+	describe('postOrder()', function(){
 		it('is a method on instances of Tree', function(){
 			expect(tree).to.have.a.property('postOrder')
 			expect(tree.postOrder).to.be.a('function')
@@ -228,13 +276,6 @@ describe('Tree(options)', function(){
 		})
 	})
 	
-	describe('forEach', function(){
-		it('is a method on instances of Tree', function(){
-			expect(tree).to.have.a.property('forEach')
-			expect(tree.forEach).to.be.a('function')
-		})
-	})
-
 	describe('TreeIterator(tree, order)', function(){
 		it('is a constructor function', function(){
 			expect(TreeIterator).to.be.a('function')
@@ -251,23 +292,109 @@ describe('Tree(options)', function(){
 			expect(iterator).to.be.an.instanceof(TreeIterator)
 		})
 
-		describe('next', function(){
+		describe('next()', function(){
+			var iterator
+
+			beforeEach(function(){
+				iterator = new TreeIterator(tree, Tree.IN_ORDER)
+			})
+
 			it('is a method on TreeIterator instances', function(){
-				var iterator = new TreeIterator(tree, Tree.IN_ORDER)
 				expect(iterator).to.have.a.property('next')
 				expect(iterator.next).to.be.a('function')
 			})
 
-			it('accepts no arguments', function(){})
-			it('consforms to the ES2015 iteration protocol', function(){})
+			it('accepts no arguments', function(){
+				expect(iterator.next).to.not.throw
+			})
+
+			it('consforms to the ES2015 iteration protocol', function(){
+				expect(iterator).to.have.a.property('next')
+				expect(iterator.next).to.be.a('function')
+			})
 
 			it('returns an object', function(){
-				var iterator = new TreeIterator(tree, Tree.IN_ORDER)
-				expect(iterator).to.have.a.property('next')
-				expect(iterator.next).to.be.a('function')
+				var result = iterator.next()
+				expect(result).to.not.be.undefined
+				expect(result).to.be.an('object')
+				expect(result).to.have.a.property('done')
+				expect(result.done).to.eq(true)
 			})
+
+			it('traverses items using Tree.IN_ORDER traversal', function(){
+				tree.set({id:50},{id:30},{id:40},{id:10})
+				iterator = tree.inOrder()
+				var result = iterator.next()
+				expect(result).to.not.be.undefined
+				expect(result).to.be.an('object')
+				expect(result).to.have.a.property('done')
+				expect(result.done).to.eq(false)
+				expect(result).to.have.a.property('value')
+				expect(result.value).to.deep.eq([{id:10}])
+				result = iterator.next()
+				expect(result.done).to.eq(false)
+				expect(result.value).to.deep.eq([{id:30}])
+				result = iterator.next()
+				expect(result.done).to.eq(false)
+				expect(result.value).to.deep.eq([{id:40}])
+				result = iterator.next()
+				expect(result.done).to.eq(false)
+				expect(result.value).to.deep.eq([{id:50}])
+				result = iterator.next()
+				expect(result.done).to.eq(true)
+			})		
 		})
 	})
 })
 
+function sanityCheck(node) {
+	if (! node) return
+	if (node) {
+		console.info('sanityCheck')
+		if (node.p && (! (node.p.l === node || node.p.r === node))) {
+			console.error('node has a parent that does not have node as a child', node)
+		}
+		if (node.l && node.l.p !== node) {
+			console.error('node has a left child whose parent does not point to node', node)
+		}
+		if (node.r && node.r.p !== node) {
+			console.error('node has a right child whose parent does not point to node', node)
+		}
+		sanityCheck(node.l)
+		sanityCheck(node.r)
+	}
+}
 
+describe('pretty', function () {
+  it('returns a pretty-printed string representation of the tree', function () {
+    var tree = new Tree()
+    tree.set({id:2}, {id:3}, {id:5}, {id:7}, {id:9}, {id:11})
+//		sanityCheck(tree.root)
+//		var it = tree.inOrder()
+
+		//
+//    var expected = '                       7\n           3                 9\n     2           5                 11\n';
+//    var actual = pretty(tree)
+//    expect(actual).to.eq(expected)
+  })
+
+  // it('returns a pretty-printed string representation of the tree', function () {
+  //   var tree = new Tree()
+  //   tree.set({id:2}, {id:3}, {id:5}, {id:7}, {id:9}, {id:11})
+  //   var expected = '                       7\n           3                 9\n     2           5                 11\n';
+  //   var actual = pretty(tree);
+  //   expect(actual).to.eq(expected)
+  // })
+
+	// describe('spaces', function () {
+	// 	it('returns the number of spaces passed in as first argument', function () {
+	// 		var generated = spaces(22)
+	// 		expect(generated.length).to.eq(22)
+	// 		for (var i=0, len=generated.length; i<len; i++) {
+	// 			expect(generated.charAt(i)).to.eq(' ')
+	// 		}
+	// 	})
+	// })
+})
+
+*/

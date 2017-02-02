@@ -9,7 +9,7 @@ extend(Tree, {
 	OPTIONS: {
 		unique: false,
 		keyProps: ['id'],
-		keys: function(obj){
+		key: function(obj){
 			var i, p, result = []
 			for (i=0; p=this.keyProps[i]; i++) result.push(obj[p])
 			return result
@@ -32,7 +32,7 @@ extend(Tree.prototype, {
 			return
 		}
 
-		var p, cmp, n = top = this.root, k = this.keys(obj), v = obj
+		var p, cmp, n = top = this.root, k = this.key(obj), v = obj
 		while (n && ((cmp = this.compare(k, n.k)) !== 0)) {
 			var d = dir(cmp)
 			if (longest(n)) top = n
@@ -44,7 +44,7 @@ extend(Tree.prototype, {
 			n.v.push(v)
 			return n;
 		}
-		var newNode = {k:k, v:[v], p:p || this.root, h:0}
+		var newNode = node(k, v, p) // {k:k, v:[v], p:p || this.root, h:0}
 		if (p) p[d] = newNode
 		else this.root = newNode
 		rebalance(this, newNode, top || this.root)
@@ -56,7 +56,7 @@ extend(Tree.prototype, {
 			for (i=0; i<args.length; i++) results.push(this.get(args[i]))
 			return results
 		}
-		var p, cmp, n = this.root, k = this.keys(obj)
+		var p, cmp, n = this.root, k = this.key(obj)
 		while (n && ((cmp = this.compare(k, n.k)) !== 0)) {
 			var d = dir(cmp)
 			p = n
@@ -73,11 +73,26 @@ extend(Tree.prototype, {
 	inOrder: function(){return new TreeIterator(this)},
 	postOrder: function(){return new TreeIterator(this, Tree.POST_ORDER)},
 
-	forEach: function(){
-
+	forEach: function(fn, order){
+		var r, it = new TreeIterator(this, order)
+		while (! (r = it.next()).done) {
+			fn(r.value, r.index, r.depth, r.node)
+		}
 	},
 })
 
+function node(k, v, p){
+	return {
+		k:k, 
+		v:[v], 
+		p:p || this.root, 
+		h:0,
+		valueOf: function(){return this.k + ':' + this.v + (this.l || this.r ? '(' + (this.l || '') + ',' + (this.r || '') + ')' : '')}
+	}
+}
+
+// Support ES2015 iterators
+if (typeof Symbol == 'function' && Symbol.iterator) {Tree.prototype[Symbol.iterator] = Tree.prototype.inOrder}
 
 function TreeIterator(tree, order) {
 	extend(this, {
@@ -91,7 +106,16 @@ function traverse(n, order) {
 	return function next(){
 		var res
 		while (!res && n) {
+			console.info('traverse', res, n && n.k, prev && prev.k, prev && prev.p && prev.p.k, n && n.p && n.p.k)
+			if (prev && prev.p && n && n.p && prev.p === n.p) {
+				// infinite loop
+				console.info('traverse prev.p.l===prev', prev.p.l===prev)
+				console.info('traverse prev.p===n.p', prev.p===n.p)
+				console.info('traverse prev.p.l===n', prev.p.l===n)
+				console.info('traverse prev.p.r===n', prev.p.r===n)
+			}
 			if (prev == n.p) { // Traversing down the tree.
+				console.info('traversing down')
 				if (order == Tree.PRE_ORDER) res = result(n)
 				prev = n
 				if (n.l) {
@@ -112,6 +136,7 @@ function traverse(n, order) {
 				}
 			} 
 			else if (prev == n.l) { // Traversing up the tree from the left.
+				console.info('traversing up from left')
 				prev = n
 				if (order == Tree.IN_ORDER) res = result(n)
 				if (n.r) {
@@ -125,6 +150,7 @@ function traverse(n, order) {
 				}
 			} 
 			else if (prev == n.r) { // Traversing up the tree from the right.
+				console.info('traversing up from right')
 				prev = n
 				if (order == Tree.POST_ORDER) res = result(n)
 				n = n.p
@@ -157,40 +183,60 @@ function rebalance(tree, n, top) {
 			var d = longest(n)
 			var o = opp(d)
 			var c = n[d] // child
-			var dc = longest(c)
 //			console.info('rebalance: n.h=', n.h, 'bfn=', bfn, 'f=', f, 'd=', d, 'dc=', dc, 'n=', n)
 //			if (n.r.h == 2) console.info('rebalance: n.r=', n.r)
-			if (d !== dc) {
-				var cc = c[dc]
+			if (d !== longest(c)) {
+//				var cc = c[dc]
 
 				// LR / RL
-//				console.info('rebalance: before reverse rotate: c=', c)
-				c = rotate(tree, c, d)
-//				console.info('rebalance: after reverse rotate: c=', c)
+				console.info('rebalance: before reverse rotate: \nc=', c)
+				rotate(tree, c, d)
+				sanityCheck(tree.root)
+				console.info('rebalance: after reverse rotate: \nc=', c)
 
 			}
-			p = n.p
-//			console.info('rebalance: rotate', p)
-			var newRoot = rotate(tree, n, o)
-//			console.info('rebalance: rotate: newRoot=', newRoot)
-			if (!p)	tree.root = newRoot	
+			console.info('rebalance: before rotate: \nn=', n, '\nn.p=', n.p)
+			rotate(tree, n, o)
+			console.info('rebalance: rotate: \nn=', n, '\nn.p=', n.p)
+			sanityCheck(tree.root)
 		}
 		n = n.p
 	}
 }
 
 function rotate(tree, n, d) {
-//	console.info('rotate', n, d)
-	var o = opp(d), c = n[o], rd = n.p ? (n.p.l == n ? 'l' : 'r') : 0
+	console.info('rotate ' + (d === 'r' ? 'right' : 'left') + ': \nn=', n, '\nd=', d)
+	var o = opp(d), c = n[o], p = n.p
 	n[o] = c[d]
-	c.p = n.p
-	if (rd) n.p[rd] = c
 	n.p = c
 	c[d] = n
-	n.h -= 2
+	c.p = p
+	if (c.p) c.p[d] = n
+	n.h--
 	c.h++
+	if (!p) tree.root = c;
+	sanityCheck(c)
 	return c
 }
+
+function sanityCheck(node) {
+	if (! node) return
+	if (node) {
+		console.info('sanityCheck')
+		if (node.p && (! (node.p.l === node || node.p.r === node))) {
+			console.error('node has a parent that does not have node as a child', node)
+		}
+		if (node.l && node.l.p !== node) {
+			console.error('node has a left child whose parent does not point to node', node)
+		}
+		if (node.r && node.r.p !== node) {
+			console.error('node has a right child whose parent does not point to node', node)
+		}
+		sanityCheck(node.l)
+		sanityCheck(node.r)
+	}
+}
+
 
 function h(n){
 //	console.info('h', n)

@@ -5,9 +5,7 @@
   "main": "utree.js",
   "scripts": {
     "test": "mocha utree.spec.js",
-    "build": "browserify src/index.js -t [ babelify --no-sourceMaps ] > index.js",
-    "build-debug": "browserify src/index.js -d -t [ babelify --no-sourceMaps ] > index.js",
-    "watch": "watchify src/index.js -o index.js -d",
+    "dev": "mocha --watch \"utree.spec.js\"",
     "demo": "node ./demo/printer.js"
   },
   "repository": {
